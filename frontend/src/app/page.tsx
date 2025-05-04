@@ -238,7 +238,7 @@ export default function Home() {
           </div>
 
           {/* MIDDLE SIDE - 3fr */}
-          <div className=" flex flex-col gap-2  ">
+          <div className=" flex flex-col gap-2">
             {/* USER FOLLOWERS */}
             <div className={`bg-white py-[6px] px-4 rounded-md`}>
               <div className={` flex  gap-5`}>
