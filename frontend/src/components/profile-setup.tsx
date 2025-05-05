@@ -28,6 +28,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "react-hot-toast";
 import axios, { AxiosError } from "axios";
 import debounce from "lodash.debounce";
+import Image from "next/image";
 interface ProfileSetupProps {
   onComplete: () => void;
 }
@@ -116,45 +117,53 @@ export function ProfileSetup({ onComplete }: ProfileSetupProps) {
         return false;
     }
   };
+  // new changes
+  const [showImageSelector, setShowImageSelector] = useState(false);
+  // const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const predefinedImages = [
+    { src: "/male1.png", label: "Book Worm" },
+    { src: "/male2.png", label: "Adventurous" },
+    { src: "/male3.png", label: "Intellictual guy" },
+    { src: "/male4.png", label: "Charming" },
+    { src: "/male5.png", label: "Bold" },
+    { src: "/female1.png", label: "Elegant" },
+    { src: "/female2.png", label: "Creative" },
+    { src: "/female3.png", label: "Religous" },
+    { src: "/female4.png", label: "Baddie" },
+    { src: "/female5.png", label: "Genius" },
+  ];
 
+  //---------------------
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  // function --- upload
 
-  const handleProfilePicChange = async (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = e.target.files?.[0];
-    if (!file) {
-      toast.error("No file selected.");
-      return;
-    }
-
-    // Validate file
-    if (!file.type.startsWith("image/")) {
-      setUploadError("Please select an image file.");
-      toast.error("Please select an image file.");
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      setUploadError("File size exceeds 5MB.");
-      toast.error("File size exceeds 5MB.");
-      return;
-    }
-
+  const handlePredefinedImageSelect = async (imagePath: string) => {
+    setShowImageSelector(false);
     setIsUploading(true);
     setUploadError(null);
 
-    const formData = new FormData();
-    formData.append("file", file);
-
-    console.log("Uploading file:", file.name, file.size, file.type);
-
     try {
-      const res = await axios.post("/api/upload", formData); // No headers
+      const response = await fetch(imagePath);
+      const blob = await response.blob();
+      const file = new File([blob], imagePath.split("/").pop() || "image.png", {
+        type: blob.type,
+      });
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      console.log(
+        "Uploading predefined image:",
+        file.name,
+        file.size,
+        file.type
+      );
+
+      const res = await axios.post("/api/upload", formData);
       const imageUrl = res.data.url;
       updateProfile("profilePic", imageUrl);
-      toast.success("Profile picture uploaded successfully! ");
+      toast.success("Profile picture uploaded successfully!");
+      setShowImageSelector(false);
     } catch (err) {
       const error = err as AxiosError<{ message?: string }>;
       console.error("❌ Upload error:", error);
@@ -166,14 +175,9 @@ export function ProfileSetup({ onComplete }: ProfileSetupProps) {
       setIsUploading(false);
     }
   };
+
   return (
     <div className="h-screen w-full select-none ">
-      {/* <div className="logo-container relative w-20 h-20 mt-5 ml-12">
-        <div className="logo-bg absolute w-12 h-12 rounded-2xl bg-purple-600" />
-        <div className="logo-text absolute top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 font-medium text-[32px] text-white tracking-tight">
-          <h2> Whispr.</h2>
-        </div>
-      </div> */}
       <div className="max-w-xl mx-auto -mt-5">
         <div className="bg-pink-50 rounded-lg shadow-xl shadow-purple-200/30 overflow-hidden border border-purple-500/30 z-50">
           <div className="px-8 py-4 bg-gradient-to-r from-purple-600 to-violet-500 text-white">
@@ -242,10 +246,12 @@ export function ProfileSetup({ onComplete }: ProfileSetupProps) {
                     <div className="flex flex-col items-center justify-center">
                       <div className="relative w-40 h-40 mb-6 group">
                         {profileData.profilePic ? (
-                          <img
+                          <Image
                             src={profileData.profilePic || "/placeholder.svg"}
                             alt="Profile preview"
-                            className="w-40 h-40 rounded-full object-cover border-4 border-purple-200 shadow-lg transition-all duration-300 group-hover:scale-105"
+                            width={160} // 40 * 4 = 160px (because w-40 is roughly 10rem = 160px)
+                            height={160} // same as above
+                            className="rounded-full object-cover border-4 border-purple-200 shadow-lg transition-all duration-300 group-hover:scale-105"
                           />
                         ) : (
                           <div className="w-40 h-40 rounded-full bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center border-4 border-purple-200 shadow-lg transition-all duration-300 group-hover:scale-105">
@@ -258,13 +264,13 @@ export function ProfileSetup({ onComplete }: ProfileSetupProps) {
                         >
                           <Camera className="h-5 w-5" />
                         </label>
-                        <input
-                          id="profile-pic"
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handleProfilePicChange}
-                        />
+
+                        <button
+                          onClick={() => setShowImageSelector(true)}
+                          className="absolute bottom-2 right-2 bg-gradient-to-r from-purple-600 to-pink-500 text-white p-3 rounded-full cursor-pointer shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300"
+                        >
+                          <Camera className="h-5 w-5" />
+                        </button>
                       </div>
                       <p className="text-sm text-gray-500">
                         Click the camera icon to upload
@@ -286,6 +292,97 @@ export function ProfileSetup({ onComplete }: ProfileSetupProps) {
                       )}
                     </div>
                   </div>
+                )}
+                {/* 2 THINGS I ADDED A WINDOW  */}
+                {showImageSelector && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 bg-black/40 backdrop-blur-md flex justify-center items-center z-50"
+                  >
+                    <motion.div
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 200,
+                        damping: 20,
+                      }}
+                      className="bg-white w-[48rem] px-6 py-4 rounded-md shadow-xl"
+                    >
+                      <h3 className="text-center text-[22px] font-medium mb-6 text-accent-foreground">
+                        Select a Profile Picture That Reflects You
+                      </h3>
+
+                      <div className="grid grid-cols-5 gap-4 mb-4">
+                        {predefinedImages
+                          .filter((_, index) => index < 5) // First 5 (male)
+                          .map((item, index) => (
+                            <motion.div
+                              key={index}
+                              whileHover={{ scale: 1.1, rotate: 2 }}
+                              whileTap={{ scale: 0.95 }}
+                              className="cursor-pointer flex flex-col items-center"
+                              onClick={() =>
+                                handlePredefinedImageSelect(item.src)
+                              }
+                            >
+                              <div className="rounded-full overflow-hidden shadow-md border-2 border-purple-300">
+                                <Image
+                                  src={item.src}
+                                  alt={`Predefined ${index}`}
+                                  width={90}
+                                  height={90}
+                                  className="object-cover"
+                                />
+                              </div>
+                              <span className="mt-1 text-xs text-gray-600 font-medium">
+                                {item.label}
+                              </span>
+                            </motion.div>
+                          ))}
+                      </div>
+
+                      <div className="grid grid-cols-5 gap-4">
+                        {predefinedImages
+                          .filter((_, index) => index >= 5) // Next 5 (female)
+                          .map((item, index) => (
+                            <motion.div
+                              key={index + 5}
+                              whileHover={{ scale: 1.1, rotate: 2 }}
+                              whileTap={{ scale: 0.95 }}
+                              className="cursor-pointer flex flex-col items-center"
+                              onClick={() =>
+                                handlePredefinedImageSelect(item.src)
+                              }
+                            >
+                              <div className="rounded-full overflow-hidden shadow-md border-2 border-pink-300">
+                                <Image
+                                  src={item.src}
+                                  alt={`Predefined ${index + 5}`}
+                                  width={90}
+                                  height={90}
+                                  className="object-cover"
+                                />
+                              </div>
+                              <span className="mt-1 text-xs text-gray-600 font-medium">
+                                {item.label}
+                              </span>
+                            </motion.div>
+                          ))}
+                      </div>
+
+                      <div className="mt-6 flex justify-center">
+                        <button
+                          onClick={() => setShowImageSelector(false)}
+                          className="w-[30%] px-6 py-1 bg-accent-foreground text-white rounded-md shadow-md hover:shadow-lg hover:bg-purple-500 transition-all duration-300 cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </motion.div>
+                  </motion.div>
                 )}
 
                 {/* --------- */}
