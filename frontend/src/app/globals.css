@@ -360,4 +360,18 @@
   body {
     @apply bg-background text-foreground;
     }
+    html, body {
+      @apply bg-background text-foreground;
+      overflow-y: auto;
+      scroll-behavior: smooth;
+      scrollbar-width: none; /* Firefox */
+    }
+    /* Hide scrollbar for Chrome, Edge, and Safari */
+    html::-webkit-scrollbar, body::-webkit-scrollbar {
+      display: none; /* Completely hide scrollbar */
+    }
+    /* Fallback: Target all possible scrollable elements */
+    *::-webkit-scrollbar {
+      display: none; /* Ensure scrollbars are hidden on any element */
+    }
 }

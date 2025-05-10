@@ -4,7 +4,7 @@ const User = require("../models/User");
 const verifyAuthToken = async (req, res, next) => {
   try {
     const token = req.cookies.auth_token;
-    console.log("🔥 Token received in cookie:", token);
+    // console.log("🔥 Token received in cookie:", token);
 
     if (!token) {
       console.log("⛔ No token provided in cookie");
@@ -14,7 +14,7 @@ const verifyAuthToken = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log("✅ Decoded Token:", decoded);
+    // console.log("✅ Decoded Token:", decoded);
 
     const user = await User.findById(decoded.userId).select("-password");
     // console.log("👤 User fetched from DB:", user);

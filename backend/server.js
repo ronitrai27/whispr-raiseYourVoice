@@ -1,16 +1,25 @@
 const express = require("express");
+const http = require("http");
+const { Server } = require("socket.io");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const connectDB = require("./config/db");
-const commentRoutes = require("./routes/commentRoute");
 require("dotenv").config();
 
 // Initialize app
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: true,
+    credentials: true,
+  },
+});
+// Socket.IO handlers
+require("./sockets/socketHandler")(io);
 
-// Connect to MongoDB
 connectDB();
 
 // Middlewares
@@ -34,9 +43,16 @@ app.use(
     credentials: true,
   })
 );
+const commentRoutes = require("./routes/commentRoute");
+const discoverRoutes = require("./routes/discoverRoute");
+const userRoutes = require("./routes/userRoutes");
+const searchRoutes = require("./routes/searchRoute");
 
 // Routes
 app.use("/api/comments", commentRoutes);
+app.use("/api/discover", discoverRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/search", searchRoutes);
 
 // Error Handling
 app.use((err, req, res, next) => {
@@ -44,8 +60,7 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: "Something went wrong!" });
 });
 
-// Start server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+server.listen(PORT, () => {
+  console.log(`Server + Socket.IO running on port ${PORT}`);
 });
